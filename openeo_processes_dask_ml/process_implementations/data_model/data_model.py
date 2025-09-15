@@ -13,7 +13,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
     DimensionMismatch,
     DimensionMissing,
 )
-from pystac.extensions.mlm import MLMExtension
+from pystac.extensions.mlm import MLMExtension, _AssetMLMExtension
 
 from openeo_processes_dask_ml.process_implementations.constants import MODEL_CACHE_DIR
 from openeo_processes_dask_ml.process_implementations.exceptions import (
@@ -34,25 +34,26 @@ logger = logging.getLogger(__name__)
 
 
 class MLModel(ABC):
-    stac_item: pystac.Item
+    _stac_item: pystac.Item
+    _model_asset: pystac.Asset
 
     def __init__(self, stac_item: pystac.Item, model_asset_name: str = None):
-        self.stac_item = stac_item
-        self.model_asset = self._get_model_asset(model_asset_name)
+        self._stac_item = stac_item
+        self._model_asset = self._get_model_asset(model_asset_name)
         self._model_object = None
 
     @property
     def model_metadata(self) -> MLMExtension:
         # todo: account for if metadata is stored with the asset
-        return MLMExtension.ext(self.stac_item)
+        return MLMExtension.ext(self._stac_item)
 
     @property
-    def model_asset_metadata(self) -> pystac.extensions.mlm._AssetMLMExtension:
+    def model_asset_metadata(self) -> _AssetMLMExtension:
         """
         Get the asset metadata of the model asset.
         :return: asset metadata
         """
-        return self.model_asset.ext.mlm
+        return self._model_asset.ext.mlm
 
     def _get_model_asset(self, asset_name: str = None) -> pystac.Asset:
         """
@@ -61,7 +62,7 @@ class MLModel(ABC):
         :param asset_name: model asset name (could be None)
         :return: model asset name
         """
-        assets = self.stac_item.assets
+        assets = self._stac_item.assets
         model_assets = {
             key: assets[key] for key in assets if "mlm:model" in assets[key].roles
         }
@@ -96,7 +97,7 @@ class MLModel(ABC):
         # model_asset = self._get_model_asset(asset_name)
         # url = self.model_asset_metadata.asset_href
         # url = model_asset.href
-        url = self.model_asset.href
+        url = self._model_asset.href
 
         # encode URL to directory name and file name
         model_dir_name = model_cache_utils.url_to_dir_string(url)
