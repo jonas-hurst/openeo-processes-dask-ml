@@ -14,8 +14,17 @@ class TorchModel(MLModel):
         self._model_on_device = None
 
     def create_model_object(self, filepath: str):
-        # todo: consider checkpoint, JIT, export
-        self._model_object = torch.jit.load(filepath)
+        at = self.model_asset_metadata.artifact_type
+        if at == "torch.jit.save" or at.lower() == "torchscript":
+            self._model_object = torch.jit.load(filepath)
+        elif at == "torch.export.save":
+            self._model_object = torch.export.load(filepath)
+        else:
+            raise NotImplemented(
+                f"Importing Torch models with artifact type {at} is not supported.\n"
+                f"Use a model with artifact type torch.jit.save or torch.export.save "
+                f"instead"
+            )
 
     def init_model_for_prediction(self):
         self._model_on_device = self._model_object.to(DEVICE)
