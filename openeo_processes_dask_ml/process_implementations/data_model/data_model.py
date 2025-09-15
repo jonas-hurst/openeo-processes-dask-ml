@@ -46,6 +46,14 @@ class MLModel(ABC):
         # todo: account for if metadata is stored with the asset
         return MLMExtension.ext(self.stac_item)
 
+    @property
+    def model_asset_metadata(self) -> pystac.extensions.mlm._AssetMLMExtension:
+        """
+        Get the asset metadata of the model asset.
+        :return: asset metadata
+        """
+        return self.stac_item.assets[self._model_asset_name].ext.mlm
+
     def _get_model_asset(self, asset_name: str = None) -> pystac.Asset:
         """
         Determine which asset holds the model (has mlm:model in roles)
