@@ -21,12 +21,10 @@ from tests.dummy.dummy_ml_model import DummyMLModel
 def test_correct_asset_selection(
     blank_stac_item, random_asset, mlm_model_asset
 ) -> None:
-    d = DummyMLModel(blank_stac_item)
     with pytest.raises(Exception):
-        d._get_model_asset()
+        d = DummyMLModel(blank_stac_item)
 
     blank_stac_item.add_asset("asset1", random_asset)
-    d = DummyMLModel(blank_stac_item)
     with pytest.raises(Exception):
         d._get_model_asset()
     with pytest.raises(Exception):
@@ -38,8 +36,8 @@ def test_correct_asset_selection(
     assert d._get_model_asset("asset2").title == "model"
 
     blank_stac_item.add_asset("asset3", mlm_model_asset)
-    d = DummyMLModel(blank_stac_item)
     with pytest.raises(Exception):
+        d = DummyMLModel(blank_stac_item)
         d._get_model_asset()
     assert d._get_model_asset("asset3").title == "model"
 

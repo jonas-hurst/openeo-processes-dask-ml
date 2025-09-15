@@ -38,7 +38,7 @@ class MLModel(ABC):
 
     def __init__(self, stac_item: pystac.Item, model_asset_name: str = None):
         self.stac_item = stac_item
-        self._model_asset_name = model_asset_name
+        self.model_asset = self._get_model_asset(model_asset_name)
         self._model_object = None
 
     @property
@@ -52,14 +52,14 @@ class MLModel(ABC):
         Get the asset metadata of the model asset.
         :return: asset metadata
         """
-        return self.stac_item.assets[self._model_asset_name].ext.mlm
+        return self.model_asset.ext.mlm
 
     def _get_model_asset(self, asset_name: str = None) -> pystac.Asset:
         """
         Determine which asset holds the model (has mlm:model in roles)
         Determines whcih asset to use if multiple assets with role mlm:models are found
-        :param asset_name:
-        :return:
+        :param asset_name: model asset name (could be None)
+        :return: model asset name
         """
         assets = self.stac_item.assets
         model_assets = {
@@ -92,9 +92,11 @@ class MLModel(ABC):
             "Please sepcify which one to use."
         )
 
-    def _get_model(self, asset_name=None) -> str:
-        model_asset = self._get_model_asset(asset_name)
-        url = model_asset.href
+    def _get_model(self) -> str:
+        # model_asset = self._get_model_asset(asset_name)
+        # url = self.model_asset_metadata.asset_href
+        # url = model_asset.href
+        url = self.model_asset.href
 
         # encode URL to directory name and file name
         model_dir_name = model_cache_utils.url_to_dir_string(url)
@@ -1094,7 +1096,7 @@ class MLModel(ABC):
             # model object has already been created
             return
 
-        model_filepath = self._get_model(self._model_asset_name)
+        model_filepath = self._get_model()
         self.create_model_object(model_filepath)
 
     @abstractmethod
