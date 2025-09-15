@@ -2,8 +2,6 @@
 .vscode
 .ipynb_checkpoints
 
-poetry.lock
-
 pystac
 cache
 tests/tmp
