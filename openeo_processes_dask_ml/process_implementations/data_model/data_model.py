@@ -1033,14 +1033,14 @@ class MLModel(ABC):
 
         return xr.concat(scaled_bands, dim=band_dim_name)
 
-    def preprocess_datacube_expression(self, datacube: xr.DataArray) -> xr.DataArray:
+    def preprocess_datacube_expression(self, input_obj) -> xr.DataArray:
         pre_proc_expression = self.model_metadata.input[0].pre_processing_function
         if pre_proc_expression is None:
-            return datacube
+            return input_obj
 
         try:
             pre_processing_result = proc_expression_utils.run_process_expression(
-                datacube, pre_proc_expression
+                input_obj, pre_proc_expression
             )
         except ExpressionEvaluationException as e:
             raise Exception(
@@ -1069,8 +1069,7 @@ class MLModel(ABC):
         subset_datacube = self.select_bands(datacube)
 
         scaled_dc = self.scale_values(subset_datacube)
-        preproc_dc = self.preprocess_datacube_expression(scaled_dc)
-        preproc_dc_casted = preproc_dc.astype(
+        preproc_dc_casted = scaled_dc.astype(
             self.model_metadata.input[0].input.data_type
         )
         # todo: datacube padding?

@@ -37,7 +37,14 @@ class TorchModel(MLModel):
         torch.cuda.empty_cache()
 
     def execute_model(self, batch: np.ndarray) -> np.ndarray:
-        tensor = torch.from_numpy(batch).to(DEVICE)
+        try:
+            preproc_batch = self.preprocess_datacube_expression(batch)
+            tensor = torch.from_numpy(preproc_batch)
+        except:
+            batch_tensor = torch.from_numpy(batch)
+            tensor = self.preprocess_datacube_expression(batch_tensor)
+        tensor = tensor.to(DEVICE)
+
         with torch.no_grad():
             out = self._model_on_device(tensor)
 
