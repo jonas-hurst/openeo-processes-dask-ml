@@ -114,6 +114,20 @@ def load_ml_model(
             f"{', '.join(AVAILABLE_ML_FRAMEWORKS)}"
         )
 
+    # check if input_index and output_index are valid
+    if input_index >= len(mlm_item.ext.mlm.input):
+        raise Exception(
+            f"{input_index=} is invalid, as it exceeds the length of available input "
+            f"specifications in the provided STAC:MLM item. Remember that indexes start"
+            f"at 0."
+        )
+    if output_index >= len(mlm_item.ext.mlm.output):
+        raise Exception(
+            f"{output_index=} is invalid, as it exceeds the length of available output "
+            f"specifications in the provided STAC:MLM item. Remember that indexes start"
+            f"at 0."
+        )
+
     if ml_framework == "ONNX":
         model_object = ONNXModel(mlm_item, model_asset, input_index, output_index)
     elif ml_framework == "PyTorch":
