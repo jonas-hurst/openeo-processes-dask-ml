@@ -181,7 +181,7 @@ class MLModel(ABC):
         :param in_datacube:
         :return:
         """
-        out_dims = self.model_metadata.output[0].result.dim_order
+        out_dims = self.output.result.dim_order
         in_dims = self.input.input.dim_order
         in_dims_map = [d[0] for d in self.get_datacube_dimension_mapping(in_datacube)]
 
@@ -533,7 +533,7 @@ class MLModel(ABC):
         """
         in_dims_model = self.input.input.dim_order
         in_dims_datacube = self.get_datacube_dimension_mapping(datacube)
-        out_dims = self.model_metadata.output[0].result.dim_order
+        out_dims = self.output.result.dim_order
 
         in_dims_not_in_out_dims = []
         for model_in_dim, dc_in_dim in zip(in_dims_model, in_dims_datacube):
@@ -586,7 +586,7 @@ class MLModel(ABC):
 
     def get_chunk_output_shape(self, in_datacube: xr.DataArray) -> tuple[int, ...]:
         model_out_dims = self.get_datacube_output_dimension_mapping(in_datacube)
-        model_out_shape = self.model_metadata.output[0].result.shape
+        model_out_shape = self.output.result.shape
 
         input_dims_not_in_output = self.get_input_dims_not_in_output(in_datacube)
         dims_not_in_model = self.get_dims_not_in_model(in_datacube)
@@ -724,7 +724,7 @@ class MLModel(ABC):
         ]
 
         model_output_dims = output_dc_dim_mapping
-        model_output_shape = self.model_metadata.output[0].result.shape
+        model_output_shape = self.output.result.shape
 
         # re-attach coordinates for dims not used in the model
         for d in dims_not_in_model:
@@ -928,7 +928,7 @@ class MLModel(ABC):
         dims_removed, dims_added = self.compare_input_output_dimensions(input_dc)
         chunk_out_shape = self.get_chunk_output_shape(input_dc)
 
-        out_dtype = self.model_metadata.output[0].result.data_type
+        out_dtype = self.output.result.data_type
         try:
             out_dtype_np = np.dtype(out_dtype)
         except TypeError:
@@ -1080,7 +1080,7 @@ class MLModel(ABC):
         return pre_processing_result
 
     def postprocess_datacube_expression(self, output_obj):
-        post_proc_expression = self.model_metadata.output[0].post_processing_function
+        post_proc_expression = self.output.post_processing_function
         if post_proc_expression is None:
             return output_obj
 

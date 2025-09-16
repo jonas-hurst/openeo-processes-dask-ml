@@ -19,9 +19,9 @@ class DummyMLModel(MLModel):
         pass
 
     def execute_model(self, batch: xr.DataArray) -> xr.DataArray:
-        out_shape = self.model_metadata.output[0].result.shape
-        out_dims = self.model_metadata.output[0].result.dim_order
-        out_dtype = self.model_metadata.output[0].result.data_type
+        out_shape = self.output.result.shape
+        out_dims = self.output.result.dim_order
+        out_dtype = self.output.result.data_type
 
         out_dc_shape = [*out_shape]
 
