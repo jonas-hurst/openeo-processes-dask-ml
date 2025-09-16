@@ -115,9 +115,9 @@ def load_ml_model(
         )
 
     if ml_framework == "ONNX":
-        model_object = ONNXModel(mlm_item, model_asset)
+        model_object = ONNXModel(mlm_item, model_asset, input_index, output_index)
     elif ml_framework == "PyTorch":
-        model_object = TorchModel(mlm_item, model_asset)
+        model_object = TorchModel(mlm_item, model_asset, input_index, output_index)
     else:
         raise Exception(f"{ml_framework} runtime is not supported.")
 
