@@ -13,7 +13,12 @@ from openeo_processes_dask.process_implementations.exceptions import (
     DimensionMismatch,
     DimensionMissing,
 )
-from pystac.extensions.mlm import MLMExtension, _AssetMLMExtension
+from pystac.extensions.mlm import (
+    MLMExtension,
+    ModelInput,
+    ModelOutput,
+    _AssetMLMExtension,
+)
 
 from openeo_processes_dask_ml.process_implementations.constants import MODEL_CACHE_DIR
 from openeo_processes_dask_ml.process_implementations.exceptions import (
@@ -36,10 +41,20 @@ logger = logging.getLogger(__name__)
 class MLModel(ABC):
     _stac_item: pystac.Item
     _model_asset: pystac.Asset
+    _input_index: int
+    _output_index: int
 
-    def __init__(self, stac_item: pystac.Item, model_asset_name: str = None):
+    def __init__(
+        self,
+        stac_item: pystac.Item,
+        model_asset_name: str = None,
+        input_index: int = 0,
+        output_index: int = 0,
+    ):
         self._stac_item = stac_item
         self._model_asset = self._get_model_asset(model_asset_name)
+        self._input_index = input_index
+        self._output_index = output_index
         self._model_object = None
 
     @property
@@ -54,6 +69,22 @@ class MLModel(ABC):
         :return: asset metadata
         """
         return self._model_asset.ext.mlm
+
+    @property
+    def model_input(self) -> ModelInput:
+        """
+        Contains info on how the input to the ML model must look like
+        :return:
+        """
+        return self.model_metadata.input[self._input_index]
+
+    @property
+    def model_output(self) -> ModelOutput:
+        """
+        Contains info on how the output of ML model will look like
+        :return:
+        """
+        return self.model_metadata.output[self._output_index]
 
     def _get_model_asset(self, asset_name: str = None) -> pystac.Asset:
         """
