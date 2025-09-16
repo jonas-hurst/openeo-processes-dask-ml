@@ -119,11 +119,4 @@ def load_ml_model(uri: str, model_asset: str = None) -> MLModel:
     else:
         raise Exception(f"{ml_framework} runtime is not supported.")
 
-    # download model
-    # question: Download here, or when mdoel is actually executed?
-    # Answer: Here, so we dont do image preprocessing steps unnecessarily in case the download fails
-    # question: where to download the model to?
-
-    # construct model from object
-
     return model_object
