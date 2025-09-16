@@ -6,3 +6,5 @@ pystac
 cache
 tests/tmp
 models
+
+__pycache__
