@@ -27,7 +27,7 @@ class DummyMLModel(MLModel):
 
         # replace batch dim -1 with actual batch number from input
         if "batch" in out_dims and out_shape[out_dims.index("batch")] == -1:
-            in_batch_idx = self.model_metadata.input[0].input.dim_order.index("batch")
+            in_batch_idx = self.input.input.dim_order.index("batch")
             n_batches = batch.shape[in_batch_idx]
 
             out_batch_idx = out_dims.index("batch")
