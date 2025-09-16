@@ -71,7 +71,7 @@ class MLModel(ABC):
         return self._model_asset.ext.mlm
 
     @property
-    def model_input(self) -> ModelInput:
+    def input(self) -> ModelInput:
         """
         Contains info on how the input to the ML model must look like
         :return:
@@ -79,7 +79,7 @@ class MLModel(ABC):
         return self.model_metadata.input[self._input_index]
 
     @property
-    def model_output(self) -> ModelOutput:
+    def output(self) -> ModelOutput:
         """
         Contains info on how the output of ML model will look like
         :return:
