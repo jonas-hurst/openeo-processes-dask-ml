@@ -3,10 +3,12 @@ from math import sqrt
 import torch
 
 
-def _reorder_patch_embeddings(embedding_tensor: torch.Tensor) -> torch.Tensor:
-    tensor_shp = embedding_tensor.shape
-    samples_per_batch = tensor_shp[0]
-    num_patches = tensor_shp[1]
+def _derive_image_information(tensor: torch.Tensor) -> tuple[int, int, int]:
+    t_shp = tensor.shape
+    samples_per_batch = t_shp[0]
+    num_patches = t_shp[1]
+    embedding_dim = t_shp[2]
+
     try:
         patches_per_side = sqrt(num_patches)
         if patches_per_side % 1 != 0:
@@ -18,7 +20,13 @@ def _reorder_patch_embeddings(embedding_tensor: torch.Tensor) -> torch.Tensor:
             "raster. If the model output includes a CLS token, use "
             "get_patch_embeddings_wit_cls_square function instead."
         )
-    embedding_dim = tensor_shp[2]
+
+    return samples_per_batch, patches_per_side, embedding_dim
+
+
+def _reorder_patch_embeddings(embedding_tensor: torch.Tensor) -> torch.Tensor:
+    image_info = _derive_image_information(embedding_tensor)
+    samples_per_batch, patches_per_side, embedding_dim = image_info
     out_shape = (samples_per_batch, patches_per_side, patches_per_side, embedding_dim)
     reshaped = embedding_tensor.reshape(out_shape)
     return reshaped
