@@ -8,8 +8,14 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class TorchModel(MLModel):
-    def __init__(self, stac_item: pystac.Item, model_asset_name: str = None):
-        MLModel.__init__(self, stac_item, model_asset_name)
+    def __init__(
+        self,
+        stac_item: pystac.Item,
+        model_asset_name: str = None,
+        input_index: int = 0,
+        output_index: int = 0,
+    ):
+        MLModel.__init__(self, stac_item, model_asset_name, input_index, output_index)
 
         self._model_on_device = None
 

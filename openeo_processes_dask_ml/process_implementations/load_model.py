@@ -56,7 +56,9 @@ def _load_stac_from_local(uri: str) -> dict[str, Any]:
         return stac
 
 
-def load_ml_model(uri: str, model_asset: str = None) -> MLModel:
+def load_ml_model(
+    uri: str, model_asset: str = None, input_index: int = 0, output_index: int = 0
+) -> MLModel:
     if type(uri) is not str:
         raise ValueError("Type of URI parameter must be a string.")
 
@@ -112,18 +114,25 @@ def load_ml_model(uri: str, model_asset: str = None) -> MLModel:
             f"{', '.join(AVAILABLE_ML_FRAMEWORKS)}"
         )
 
+    # check if input_index and output_index are valid
+    if input_index >= len(mlm_item.ext.mlm.input):
+        raise Exception(
+            f"{input_index=} is invalid, as it exceeds the length of available input "
+            f"specifications in the provided STAC:MLM item. Remember that indexes start"
+            f"at 0."
+        )
+    if output_index >= len(mlm_item.ext.mlm.output):
+        raise Exception(
+            f"{output_index=} is invalid, as it exceeds the length of available output "
+            f"specifications in the provided STAC:MLM item. Remember that indexes start"
+            f"at 0."
+        )
+
     if ml_framework == "ONNX":
-        model_object = ONNXModel(mlm_item, model_asset)
+        model_object = ONNXModel(mlm_item, model_asset, input_index, output_index)
     elif ml_framework == "PyTorch":
-        model_object = TorchModel(mlm_item, model_asset)
+        model_object = TorchModel(mlm_item, model_asset, input_index, output_index)
     else:
         raise Exception(f"{ml_framework} runtime is not supported.")
-
-    # download model
-    # question: Download here, or when mdoel is actually executed?
-    # Answer: Here, so we dont do image preprocessing steps unnecessarily in case the download fails
-    # question: where to download the model to?
-
-    # construct model from object
 
     return model_object

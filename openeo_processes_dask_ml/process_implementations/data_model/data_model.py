@@ -13,7 +13,12 @@ from openeo_processes_dask.process_implementations.exceptions import (
     DimensionMismatch,
     DimensionMissing,
 )
-from pystac.extensions.mlm import MLMExtension, _AssetMLMExtension
+from pystac.extensions.mlm import (
+    MLMExtension,
+    ModelInput,
+    ModelOutput,
+    _AssetMLMExtension,
+)
 
 from openeo_processes_dask_ml.process_implementations.constants import MODEL_CACHE_DIR
 from openeo_processes_dask_ml.process_implementations.exceptions import (
@@ -36,10 +41,20 @@ logger = logging.getLogger(__name__)
 class MLModel(ABC):
     _stac_item: pystac.Item
     _model_asset: pystac.Asset
+    _input_index: int
+    _output_index: int
 
-    def __init__(self, stac_item: pystac.Item, model_asset_name: str = None):
+    def __init__(
+        self,
+        stac_item: pystac.Item,
+        model_asset_name: str = None,
+        input_index: int = 0,
+        output_index: int = 0,
+    ):
         self._stac_item = stac_item
         self._model_asset = self._get_model_asset(model_asset_name)
+        self._input_index = input_index
+        self._output_index = output_index
         self._model_object = None
 
     @property
@@ -54,6 +69,22 @@ class MLModel(ABC):
         :return: asset metadata
         """
         return self._model_asset.ext.mlm
+
+    @property
+    def input(self) -> ModelInput:
+        """
+        Contains info on how the input to the ML model must look like
+        :return:
+        """
+        return self.model_metadata.input[self._input_index]
+
+    @property
+    def output(self) -> ModelOutput:
+        """
+        Contains info on how the output of ML model will look like
+        :return:
+        """
+        return self.model_metadata.output[self._output_index]
 
     def _get_model_asset(self, asset_name: str = None) -> pystac.Asset:
         """
@@ -126,7 +157,7 @@ class MLModel(ABC):
         :param datacube: The datacube to map the dimeions agains
         :return: Tuple with dc-equivalent model input dimension names and their index
         """
-        model_dims = self.model_metadata.input[0].input.dim_order
+        model_dims = self.input.input.dim_order
         dc_dims = datacube.dims
 
         dim_mapping = []
@@ -150,8 +181,8 @@ class MLModel(ABC):
         :param in_datacube:
         :return:
         """
-        out_dims = self.model_metadata.output[0].result.dim_order
-        in_dims = self.model_metadata.input[0].input.dim_order
+        out_dims = self.output.result.dim_order
+        in_dims = self.input.input.dim_order
         in_dims_map = [d[0] for d in self.get_datacube_dimension_mapping(in_datacube)]
 
         out_dims_map = []
@@ -176,7 +207,7 @@ class MLModel(ABC):
         :return: None
         """
 
-        input_dims = self.model_metadata.input[0].input.dim_order
+        input_dims = self.input.input.dim_order
         dim_mapping = self.get_datacube_dimension_mapping(datacube)
 
         unmatched_dims = [input_dims[i] for i, d in enumerate(dim_mapping) if d is None]
@@ -204,10 +235,10 @@ class MLModel(ABC):
         :return: None
         """
 
-        input_dims = self.model_metadata.input[0].input.dim_order
+        input_dims = self.input.input.dim_order
         dim_mapping = self.get_datacube_dimension_mapping(datacube)
 
-        input_shape = self.model_metadata.input[0].input.shape  # e.g. [-1, 3, 128, 128]
+        input_shape = self.input.input.shape  # e.g. [-1, 3, 128, 128]
         dc_shape = datacube.shape  # e.g. (12, 1000, 1000, 5)
 
         # reorder dc_shape to match input_shape
@@ -255,7 +286,7 @@ class MLModel(ABC):
         :raises LabelDoesNotExist: If any required band (that cannot be computed) is
         missing from the datacube.
         """
-        input_bands = self.model_metadata.input[0].bands
+        input_bands = self.input.bands
         input_bands_str = [i if isinstance(i, str) else i.name for i in input_bands]
 
         # bands prorety not utilized, list is empty
@@ -342,8 +373,8 @@ class MLModel(ABC):
         :param dc: The datacube
         :return: Indexes per dimension, in the order of dim_order
         """
-        model_inp_dims = self.model_metadata.input[0].input.dim_order
-        model_inp_shape = self.model_metadata.input[0].input.shape
+        model_inp_dims = self.input.input.dim_order
+        model_inp_shape = self.input.input.shape
         dim_mapping = self.get_datacube_dimension_mapping(dc)
 
         # get new dc dim order and shape without "batch" dim
@@ -388,8 +419,8 @@ class MLModel(ABC):
         :param dc: The datacube to be reshaped
         :return: reshaped DC
         """
-        model_inp_dims = self.model_metadata.input[0].input.dim_order
-        model_inp_shape = self.model_metadata.input[0].input.shape
+        model_inp_dims = self.input.input.dim_order
+        model_inp_shape = self.input.input.shape
 
         dim_mapping = self.get_datacube_dimension_mapping(dc)
 
@@ -440,8 +471,8 @@ class MLModel(ABC):
         Compute the actual batch size to use when running the model
         :return: batch size
         """
-        dim_order = self.model_metadata.input[0].input.dim_order
-        shape = self.model_metadata.input[0].input.shape
+        dim_order = self.input.input.dim_order
+        shape = self.input.input.shape
         batch_size_recommendation = self.model_metadata.batch_size_suggestion
         batch_in_dimensions = "batch" in dim_order
 
@@ -500,9 +531,9 @@ class MLModel(ABC):
         :param datacube:
         :return:
         """
-        in_dims_model = self.model_metadata.input[0].input.dim_order
+        in_dims_model = self.input.input.dim_order
         in_dims_datacube = self.get_datacube_dimension_mapping(datacube)
-        out_dims = self.model_metadata.output[0].result.dim_order
+        out_dims = self.output.result.dim_order
 
         in_dims_not_in_out_dims = []
         for model_in_dim, dc_in_dim in zip(in_dims_model, in_dims_datacube):
@@ -555,7 +586,7 @@ class MLModel(ABC):
 
     def get_chunk_output_shape(self, in_datacube: xr.DataArray) -> tuple[int, ...]:
         model_out_dims = self.get_datacube_output_dimension_mapping(in_datacube)
-        model_out_shape = self.model_metadata.output[0].result.shape
+        model_out_shape = self.output.result.shape
 
         input_dims_not_in_output = self.get_input_dims_not_in_output(in_datacube)
         dims_not_in_model = self.get_dims_not_in_model(in_datacube)
@@ -611,7 +642,7 @@ class MLModel(ABC):
         """
         try:
             # get dimension index of "batch" dimension
-            batch_index = self.model_metadata.input[0].input.dim_order.index("batch")
+            batch_index = self.input.input.dim_order.index("batch")
         except ValueError:
             # in case input has no batch dim: use 0
             batch_index = 0
@@ -622,7 +653,7 @@ class MLModel(ABC):
         #   - length of dimensions in model are as they need to be to satisfy model
         #   - length of dimensions not in model are 1
 
-        num_input_dims = len(self.model_metadata.input[0].input.shape)
+        num_input_dims = len(self.input.input.shape)
         num_datacube_dims = len(datacube.shape)
         axes_to_squeeze = tuple(range(num_input_dims, num_datacube_dims))
         datacube = datacube.squeeze(
@@ -685,7 +716,7 @@ class MLModel(ABC):
         # filter out "batch" dimension (is None in mapping)
         dc_input_dims_without_batch = [n for n in dc_input_dims if n is not None]
 
-        model_input_shape = self.model_metadata.input[0].input.shape
+        model_input_shape = self.input.input.shape
         model_input_shape_without_batch = [
             d_shape
             for d_name, d_shape in zip(input_dc_dim_mapping, model_input_shape)
@@ -693,7 +724,7 @@ class MLModel(ABC):
         ]
 
         model_output_dims = output_dc_dim_mapping
-        model_output_shape = self.model_metadata.output[0].result.shape
+        model_output_shape = self.output.result.shape
 
         # re-attach coordinates for dims not used in the model
         for d in dims_not_in_model:
@@ -897,7 +928,7 @@ class MLModel(ABC):
         dims_removed, dims_added = self.compare_input_output_dimensions(input_dc)
         chunk_out_shape = self.get_chunk_output_shape(input_dc)
 
-        out_dtype = self.model_metadata.output[0].result.data_type
+        out_dtype = self.output.result.data_type
         try:
             out_dtype_np = np.dtype(out_dtype)
         except TypeError:
@@ -983,7 +1014,7 @@ class MLModel(ABC):
         return reorederd_cube
 
     def select_bands(self, datacube: xr.DataArray) -> xr.DataArray:
-        model_inp_bands = self.model_metadata.input[0].bands
+        model_inp_bands = self.input.bands
         if not model_inp_bands:
             return datacube
 
@@ -1001,7 +1032,7 @@ class MLModel(ABC):
         return datacube.sel(**{band_dim_name: bands_to_select})
 
     def scale_values(self, datacube: xr.DataArray) -> xr.DataArray:
-        scaling = self.model_metadata.input[0].value_scaling
+        scaling = self.input.value_scaling
 
         if scaling is None:
             return datacube
@@ -1034,7 +1065,7 @@ class MLModel(ABC):
         return xr.concat(scaled_bands, dim=band_dim_name)
 
     def preprocess_datacube_expression(self, input_obj) -> xr.DataArray:
-        pre_proc_expression = self.model_metadata.input[0].pre_processing_function
+        pre_proc_expression = self.input.pre_processing_function
         if pre_proc_expression is None:
             return input_obj
 
@@ -1049,7 +1080,7 @@ class MLModel(ABC):
         return pre_processing_result
 
     def postprocess_datacube_expression(self, output_obj):
-        post_proc_expression = self.model_metadata.output[0].post_processing_function
+        post_proc_expression = self.output.post_processing_function
         if post_proc_expression is None:
             return output_obj
 
@@ -1069,9 +1100,7 @@ class MLModel(ABC):
         subset_datacube = self.select_bands(datacube)
 
         scaled_dc = self.scale_values(subset_datacube)
-        preproc_dc_casted = scaled_dc.astype(
-            self.model_metadata.input[0].input.data_type
-        )
+        preproc_dc_casted = scaled_dc.astype(self.input.input.data_type)
         # todo: datacube padding?
         return preproc_dc_casted
 
