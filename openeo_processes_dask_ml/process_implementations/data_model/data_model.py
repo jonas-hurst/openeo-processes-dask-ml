@@ -656,9 +656,7 @@ class MLModel(ABC):
         num_input_dims = len(self.input.input.shape)
         num_datacube_dims = len(datacube.shape)
         axes_to_squeeze = tuple(range(num_input_dims, num_datacube_dims))
-        datacube = datacube.squeeze(
-            axis=axes_to_squeeze
-        )  # todo: only squeeze not-in-model dims!!!
+        datacube = datacube.squeeze(axis=axes_to_squeeze)
 
         b_len = datacube.shape[batch_index]
 
