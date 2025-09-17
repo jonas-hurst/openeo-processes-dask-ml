@@ -107,7 +107,7 @@ def load_ml_model(
     # Check if model runtime is supported (ONNX!, torch? tf?)
     ml_framework = mlm_item.ext.mlm.framework
 
-    if ml_framework not in AVAILABLE_ML_FRAMEWORKS:
+    if ml_framework.lower() not in [f.lower() for f in AVAILABLE_ML_FRAMEWORKS]:
         raise Exception(
             f"The ML framework {ml_framework} as required by the provided STAC:MLM Item"
             f"is not supported by this backend. Supported backends: "
@@ -128,9 +128,9 @@ def load_ml_model(
             f"at 0."
         )
 
-    if ml_framework == "ONNX":
+    if ml_framework.lower() == "onnx":
         model_object = ONNXModel(mlm_item, model_asset, input_index, output_index)
-    elif ml_framework == "PyTorch":
+    elif ml_framework.lower() == "pytorch":
         model_object = TorchModel(mlm_item, model_asset, input_index, output_index)
     else:
         raise Exception(f"{ml_framework} runtime is not supported.")
