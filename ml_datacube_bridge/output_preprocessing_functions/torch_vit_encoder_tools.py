@@ -52,14 +52,26 @@ def get_patch_embeddings_with_cls_square(t: list[torch.Tensor]) -> torch.Tensor:
     return _reorder_patch_embeddings(embedding_tensor)
 
 
-# def postproc_terramind_backbone_output_full(t: list[torch.Tensor]) -> torch.Tensor:
-#     samples_per_batch = int(t[0].numel() / (14 * 14 * 1024))
-#     num_levels = len(t)
-#
-#     out_shape = (samples_per_batch, num_levels, 14, 14, 1024)
-#     tensor_stack = torch.stack(t, dim=1).reshape(out_shape)
-#
-#     return tensor_stack
+def get_patch_embedding_without_cls_square_multilevel(
+    t: list[torch.Tensor],
+) -> torch.Tensor:
+    """
+    Reorder the output of a ViT to get each patch's embedding after every transformation step.
+    This function assumes that the image was patched in an x*x raster, and that the output does not include a CLS token.
+    :param t: model output: list of tensors, with each tensor having the shape (num_batches, num_patches, embedding_dim)
+    :return: embeddings after each transformation step
+    """
+    transformation_steps = len(t)
+    samples_per_batch, patches_per_side, embedding_dim = _derive_image_information(t[0])
+    out_shape = (
+        samples_per_batch,
+        transformation_steps,
+        patches_per_side,
+        patches_per_side,
+        embedding_dim,
+    )
+    tensor_stack = torch.stack(t, dim=1).reshape(out_shape)
+    return tensor_stack
 
 
 def get_image_cls_embedding_prepended_torch(t: list[torch.Tensor]) -> torch.Tensor:
