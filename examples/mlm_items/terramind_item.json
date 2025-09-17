@@ -125,6 +125,33 @@
                     "format": "python",
                     "expression": "ml_datacube_bridge.output_preprocessing_functions.torch_vit_encoder_tools:get_patch_embeddings_without_cls_square"
                 }
+            },
+            {
+                "name": "embeddings",
+                "tasks": [
+                    "classification"
+                ],
+                "result": {
+                    "shape": [
+                        -1,
+                        24,
+                        14,
+                        14,
+                        1024
+                    ],
+                    "dim_order": [
+                        "batch",
+                        "embedding_level",
+                        "x",
+                        "y",
+                        "embedding"
+                    ],
+                    "data_type": "float32"
+                },
+                "post_processing_function": {
+                    "format": "python",
+                    "expression": "ml_datacube_bridge.output_preprocessing_functions.torch_vit_encoder_tools:get_patch_embedding_without_cls_square_multilevel"
+                }
             }
         ]
     },
