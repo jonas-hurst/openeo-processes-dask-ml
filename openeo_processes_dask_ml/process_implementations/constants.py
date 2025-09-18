@@ -22,7 +22,7 @@ DATACUBE_CACHE_DIR = os.environ.get(
     "OPD_ML_DATACUBE_CACHE_DIR", f"{CACHE_DIR}/datacubes"
 )
 
-USE_GPU = _get_boolean_env("OPD_ML_USE_GPU", False)
+USE_GPU = _get_boolean_env("OPD_ML_USE_GPU", True)
 
 S3_MODEL_REPO_ENDPOINT = os.environ.get("OPD_ML_S3_MODEL_REPO_ENDPOINT", None)
 S3_MODEL_REPO_ACCESS_KEY_ID = os.environ.get("OPD_ML_S3_MODEL_REPO_ACCESS_KEY_ID", None)
