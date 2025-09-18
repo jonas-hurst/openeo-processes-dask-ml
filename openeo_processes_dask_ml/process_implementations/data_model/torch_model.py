@@ -2,9 +2,11 @@ import numpy as np
 import pystac
 import torch
 
+from openeo_processes_dask_ml.process_implementations.constants import USE_GPU
+
 from .data_model import MLModel
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() and USE_GPU else "cpu"
 
 
 class TorchModel(MLModel):
