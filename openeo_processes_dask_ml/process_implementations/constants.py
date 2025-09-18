@@ -6,6 +6,14 @@ DATACUBE_CACHE_DIR = os.environ.get(
     "OPD_ML_DATACUBE_CACHE_DIR", f"{CACHE_DIR}/datacubes"
 )
 
+_USE_GPU = os.environ.get("OPD_ML_USE_GPU", "true")  # allowed values: "True", "False"
+if _USE_GPU.lower() == "true":
+    USE_GPU = True
+elif _USE_GPU.lower() == "false":
+    USE_GPU = False
+else:
+    raise ValueError('Env OPD_ML_USE_GPU only allows values "True" and "False"')
+
 S3_MODEL_REPO_ENDPOINT = os.environ.get("OPD_ML_S3_MODEL_REPO_ENDPOINT", None)
 S3_MODEL_REPO_ACCESS_KEY_ID = os.environ.get("OPD_ML_S3_MODEL_REPO_ACCESS_KEY_ID", None)
 S3_MODEL_REPO_SECRET_ACCESS_KEY = os.environ.get(
