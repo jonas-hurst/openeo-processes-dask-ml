@@ -24,6 +24,23 @@ DATACUBE_CACHE_DIR = os.environ.get(
 
 USE_GPU = _get_boolean_env("OPD_ML_USE_GPU", True)
 
+# STAC:MLM has fields to apply a custom pre- and post-processing functions.
+# - Allowing them is dangerous as it can be exploited as a remote code execution.
+# - Disallowing them limits OPD-ML's versatility, as ML model outputs cannot be
+#   reshaped into their final form.
+ALLOW_MLM_PROCESSING_FUNCTION = _get_boolean_env(
+    "OPD_ML_ALLOW_PROCESSING_FUNCTION", True
+)
+
+# Specify packages that are allowed to be used for custom pre- and post-processing.
+# An empty string means everything is allowed: DANGEROUS!!!!!
+_ALLOWED_MLM_PROCESSING_PACKAGES = os.environ.get(
+    "OPD_ML_ALLOWED_MLM_PROCESSING_PACKAGES", "numpy;torch;ml_datacube_bridge"
+)
+ALLOWED_MLM_PROCESSING_PACKAGES = [
+    s.strip() for s in _ALLOWED_MLM_PROCESSING_PACKAGES.split(";") if s != ""
+]
+
 S3_MODEL_REPO_ENDPOINT = os.environ.get("OPD_ML_S3_MODEL_REPO_ENDPOINT", None)
 S3_MODEL_REPO_ACCESS_KEY_ID = os.environ.get("OPD_ML_S3_MODEL_REPO_ACCESS_KEY_ID", None)
 S3_MODEL_REPO_SECRET_ACCESS_KEY = os.environ.get(
