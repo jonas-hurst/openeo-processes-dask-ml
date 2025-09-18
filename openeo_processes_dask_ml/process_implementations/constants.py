@@ -1,18 +1,28 @@
 import os
 
+
+def _get_boolean_env(env_name, default_value: bool) -> bool:
+    env_value = os.environ.get(env_name, None)
+    if env_value is None:
+        return default_value
+    if env_value.lower() == "true":
+        return True
+    elif env_value.lower() == "false":
+        return False
+    else:
+        raise ValueError(
+            f'Env {env_name} only allows values "True" and "False". '
+            f'Currently set to "{env_value}".'
+        )
+
+
 CACHE_DIR = os.environ.get("OPD_ML_CACHE_DIR", "./cache")
 MODEL_CACHE_DIR = os.environ.get("OPD_ML_MODEL_CACHE_DIR", f"{CACHE_DIR}/model_cache")
 DATACUBE_CACHE_DIR = os.environ.get(
     "OPD_ML_DATACUBE_CACHE_DIR", f"{CACHE_DIR}/datacubes"
 )
 
-_USE_GPU = os.environ.get("OPD_ML_USE_GPU", "true")  # allowed values: "True", "False"
-if _USE_GPU.lower() == "true":
-    USE_GPU = True
-elif _USE_GPU.lower() == "false":
-    USE_GPU = False
-else:
-    raise ValueError('Env OPD_ML_USE_GPU only allows values "True" and "False"')
+USE_GPU = _get_boolean_env("OPD_ML_USE_GPU", False)
 
 S3_MODEL_REPO_ENDPOINT = os.environ.get("OPD_ML_S3_MODEL_REPO_ENDPOINT", None)
 S3_MODEL_REPO_ACCESS_KEY_ID = os.environ.get("OPD_ML_S3_MODEL_REPO_ACCESS_KEY_ID", None)
