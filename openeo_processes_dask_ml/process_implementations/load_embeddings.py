@@ -1,6 +1,7 @@
 import hashlib
 import json
 import warnings
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime as Datetime
 from pathlib import Path
@@ -100,49 +101,58 @@ def _monotonic_bounds_slice(coord_values, lo, hi):
     return slice(int(idx[0]), int(idx[-1]) + 1)
 
 
-def _snap_slice_to_chunks(s: slice, chunks: tuple[int, ...], array_len: int) -> slice:
-    """Snaps a slice's boundaries to align with Dask chunk borders.
+def _snap_slice_to_chunks(
+    slc: slice | None,
+    dim_size: int,
+    chunks: int | Sequence[int] | None,
+) -> slice | None:
+    """Expand a slice outwards so that it covers only *whole* chunks.
 
-    Expands start down and stop up.
+    Parameters
+    ----------
+    slc
+        The slice to expand (``step`` must be ``None`` or ``1``).
+    dim_size
+        Length of the dimension the slice refers to.
+    chunks
+        Either a single chunk length (uniform chunking, as reported by
+        ``encoding["preferred_chunks"]``) or a sequence of per-chunk lengths
+        (as reported by ``DataArray.chunksizes``).
+
+    Returns
+    -------
+    slice
+        A slice whose ``start`` sits on a chunk boundary and whose ``stop``
+        sits on a chunk boundary (or at ``dim_size``), and which always
+        contains the original slice.
     """
-    if s is None:
-        return None
+    if slc is None or not chunks:
+        return slc
 
-    # Handle step and negative steps if present
-    step = s.step if s.step is not None else 1
-    start = s.start if s.start is not None else 0
-    stop = s.stop if s.stop is not None else array_len
+    start, stop, step = slc.indices(dim_size)  # normalises None / negatives
+    if step != 1:
+        raise ValueError("Chunk snapping is only supported for contiguous slices.")
+    if start >= stop:  # empty selection -> nothing to snap
+        return slice(start, stop)
 
-    # Handle negative indexing/descending slice positions
-    if start < 0:
-        start += array_len
-    if stop < 0:
-        stop += array_len
-
-    # If coordinate axis is reversed (descending), normalize indices for border calculation
-    if start > stop:
-        start, stop = stop, start
-        reversed_slice = True
+    if isinstance(chunks, (int, np.integer)):
+        # ---- uniform chunking ------------------------------------------
+        chunk = int(chunks)
+        if chunk <= 0:
+            return slice(start, stop)
+        new_start = (start // chunk) * chunk
+        new_stop = min(((stop + chunk - 1) // chunk) * chunk, dim_size)
     else:
-        reversed_slice = False
+        # ---- irregular chunking (e.g. dask chunksizes) -------------------
+        bounds = np.concatenate(([0], np.cumsum(np.asarray(chunks, dtype=np.int64))))
+        # largest boundary <= start
+        i = int(np.searchsorted(bounds, start, side="right")) - 1
+        # smallest boundary >= stop
+        j = int(np.searchsorted(bounds, stop, side="left"))
+        new_start = int(bounds[max(i, 0)])
+        new_stop = int(min(bounds[min(j, len(bounds) - 1)], dim_size))
 
-    # Cumulative chunk boundary indices
-    chunk_boundaries = np.cumsum((0,) + chunks)
-
-    # Find the chunk boundary at or before 'start'
-    snapped_start_idx = np.searchsorted(chunk_boundaries, start, side="right") - 1
-    snapped_start = chunk_boundaries[snapped_start_idx]
-
-    # Find the chunk boundary at or after 'stop'
-    snapped_stop_idx = np.searchsorted(chunk_boundaries, stop, side="left")
-    snapped_stop = chunk_boundaries[snapped_stop_idx]
-
-    # Re-apply reversed ordering if original slice was descending
-    if reversed_slice:
-        snapped_start, snapped_stop = snapped_stop, snapped_start
-        step = -abs(step) if step > 0 else step
-
-    return slice(snapped_start, snapped_stop, step)
+    return slice(new_start, new_stop)
 
 
 def _load_zarr(
@@ -206,10 +216,15 @@ def _load_zarr(
 
     embedding_datacube = ds[var_name].drop_attrs()
 
+    preferred_chunks = embedding_datacube.encoding.get("preferred_chunks")
+    # e.g. {'time': 1, 'band': 64, 'y': 256, 'x': 256}
+
     # rename band dimension to embedding dimension
     try:
         band_dim = dim_utils.get_band_dim_name(embedding_datacube)
         embedding_datacube = embedding_datacube.rename({band_dim: "embedding"})
+        preferred_chunks["embedding"] = preferred_chunks[band_dim]
+        del preferred_chunks[band_dim]
     except DimensionMissing:
         pass
 
@@ -262,18 +277,21 @@ def _load_zarr(
         if x_slice is None or y_slice is None:
             raise ValueError("Bounding box does not intersect the datacube")
 
-            # --- NEW: Snap slices to chunk boundaries ---
-            # Retrieve chunk structure for both spatial dimensions
-        x_chunks = embedding_datacube.chunksizes.get(x_coord_name)
-        y_chunks = embedding_datacube.chunksizes.get(y_coord_name)
+        # --- Snap slices to chunk boundaries ---
 
-        if x_chunks:
+        if preferred_chunks:
+            x_dim = embedding_datacube[x_coord_name].dims[0]
+            y_dim = embedding_datacube[y_coord_name].dims[0]
+
             x_slice = _snap_slice_to_chunks(
-                x_slice, x_chunks, len(embedding_datacube[x_coord_name])
+                x_slice,
+                embedding_datacube.sizes[x_dim],
+                preferred_chunks.get(x_dim),
             )
-        if y_chunks:
             y_slice = _snap_slice_to_chunks(
-                y_slice, y_chunks, len(embedding_datacube[y_coord_name])
+                y_slice,
+                embedding_datacube.sizes[y_dim],
+                preferred_chunks.get(y_dim),
             )
         # --------------------------------------------
 
@@ -292,6 +310,11 @@ def _load_zarr(
         mask = (time_vals >= t_start) & (time_vals <= t_end)
         idx = np.flatnonzero(mask)
         embedding_datacube = embedding_datacube.isel({time_dim: idx})
+
+    if preferred_chunks:
+        embedding_datacube = embedding_datacube.chunk(preferred_chunks)
+    else:
+        embedding_datacube = embedding_datacube.chunk()
 
     return embedding_datacube.chunk()
 
