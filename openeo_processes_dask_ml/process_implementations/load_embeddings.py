@@ -197,7 +197,7 @@ def _load_zarr(
                 "Could not detect a CRS in the zarr store. Assuming EPSG:4326"
             )
             crs = None
-            ds.rio.write_crs("EPSG:4326")
+            ds.rio.write_crs("EPSG:4326", inplace=True)
         else:
             raise Exception("Could not determine CRS of data in zarr store.")
 
@@ -214,7 +214,7 @@ def _load_zarr(
             f"'embeddings' variable."
         )
 
-    embedding_datacube = ds[var_name].drop_attrs()
+    embedding_datacube = ds[var_name]
 
     preferred_chunks = embedding_datacube.encoding.get("preferred_chunks")
     # e.g. {'time': 1, 'band': 64, 'y': 256, 'x': 256}
