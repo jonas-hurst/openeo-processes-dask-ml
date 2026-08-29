@@ -1,0 +1,165 @@
+{
+    "id": "load_embeddings",
+    "summary": "Load embeddings from STAC",
+    "description": "Process to load pre-comptued embeddings from a STAC. May be incorporated into load_stac or load_collection later",
+    "categories": [
+        "foundation models",
+        "embeddings"
+    ],
+    "experimental": true,
+    "parameters": [
+        {
+            "name": "url",
+            "description": "URL to the STAC Item or Collection, where the embeddings are catalogued.",
+            "schema": {
+                "title": "URL",
+                "type": "string",
+                "format": "uri",
+                "subtype": "uri",
+                "pattern": "^https?://"
+            }
+        },
+        {
+            "name": "spatial_extent",
+            "description": "Limits the data to load to the specified bounding box or polygons.\n\n* For raster data, the process loads the pixel into the data cube if the point at the pixel center intersects with the bounding box or any of the polygons (as defined in the Simple Features standard by the OGC).\n* For vector data, the process loads the geometry into the data cube if the geometry is fully within the bounding box or any of the polygons (as defined in the Simple Features standard by the OGC). Empty geometries may only be in the data cube if no spatial extent has been provided.\n\nThe GeoJSON can be one of the following feature types:\n\n* A `Polygon` or `MultiPolygon` geometry,\n* a `Feature` with a `Polygon` or `MultiPolygon` geometry, or\n* a `FeatureCollection` containing at least one `Feature` with `Polygon` or `MultiPolygon` geometries.\n\nSet this parameter to `null` to set no limit for the spatial extent. Be careful with this when loading large datasets! It is recommended to use this parameter instead of using ``filter_bbox()`` or ``filter_spatial()`` directly after loading unbounded data.",
+            "schema": [
+                {
+                    "title": "Bounding Box",
+                    "type": "object",
+                    "subtype": "bounding-box",
+                    "required": [
+                        "west",
+                        "south",
+                        "east",
+                        "north"
+                    ],
+                    "properties": {
+                        "west": {
+                            "description": "West (lower left corner, coordinate axis 1).",
+                            "type": "number"
+                        },
+                        "south": {
+                            "description": "South (lower left corner, coordinate axis 2).",
+                            "type": "number"
+                        },
+                        "east": {
+                            "description": "East (upper right corner, coordinate axis 1).",
+                            "type": "number"
+                        },
+                        "north": {
+                            "description": "North (upper right corner, coordinate axis 2).",
+                            "type": "number"
+                        },
+                        "base": {
+                            "description": "Base (optional, lower left corner, coordinate axis 3).",
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "default": null
+                        },
+                        "height": {
+                            "description": "Height (optional, upper right corner, coordinate axis 3).",
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "default": null
+                        },
+                        "crs": {
+                            "description": "Coordinate reference system of the extent, specified as as [EPSG code](http://www.epsg-registry.org/) or [WKT2 CRS string](http://docs.opengeospatial.org/is/18-010r7/18-010r7.html). Defaults to `4326` (EPSG code 4326) unless the client explicitly requests a different coordinate reference system.",
+                            "anyOf": [
+                                {
+                                    "title": "EPSG Code",
+                                    "type": "integer",
+                                    "subtype": "epsg-code",
+                                    "minimum": 1000,
+                                    "examples": [
+                                        3857
+                                    ]
+                                },
+                                {
+                                    "title": "WKT2",
+                                    "type": "string",
+                                    "subtype": "wkt2-definition"
+                                }
+                            ],
+                            "default": 4326
+                        }
+                    }
+                },
+                {
+                    "title": "No filter",
+                    "description": "Don't filter spatially. All data is included in the data cube.",
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "optional": true
+        },
+        {
+            "name": "temporal_extent",
+            "description": "Limits the data to load to the specified left-closed temporal interval. Applies to all temporal dimensions. The interval has to be specified as an array with exactly two elements:\n\n1. The first element is the start of the temporal interval. The specified instance in time is **included** in the interval.\n2. The second element is the end of the temporal interval. The specified instance in time is **excluded** from the interval.\n\nThe second element must always be greater/later than the first element. Otherwise, a `TemporalExtentEmpty` exception is thrown.\n\nAlso supports open intervals by setting one of the boundaries to `null`, but never both.\n\nSet this parameter to `null` to set no limit for the temporal extent. Be careful with this when loading large datasets! It is recommended to use this parameter instead of using ``filter_temporal()`` directly after loading unbounded data.",
+            "schema": [
+                {
+                    "type": "array",
+                    "subtype": "temporal-interval",
+                    "uniqueItems": true,
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time",
+                                "subtype": "date-time",
+                                "description": "Date and time with a time zone."
+                            },
+                            {
+                                "type": "string",
+                                "format": "date",
+                                "subtype": "date",
+                                "description": "Date only, formatted as `YYYY-MM-DD`. The time zone is UTC. Missing time components are all 0."
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "examples": [
+                        [
+                            "2015-01-01T00:00:00Z",
+                            "2016-01-01T00:00:00Z"
+                        ],
+                        [
+                            "2015-01-01",
+                            "2016-01-01"
+                        ]
+                    ]
+                },
+                {
+                    "title": "No filter",
+                    "description": "Don't filter temporally. All data is included in the data cube.",
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "optional": true
+        },
+        {
+            "name": "asset_name",
+            "description": "Name of the asset that contains the embeddings.",
+            "schema": {
+                "title": "Asset name",
+                "type": "string",
+                "default": "embeddings"
+            }
+        }
+    ],
+    "returns": {
+        "description": "Bool value indicating that saving was successful (true) or not (false)",
+        "schema": {
+            "type": "bool"
+        }
+    }
+}
