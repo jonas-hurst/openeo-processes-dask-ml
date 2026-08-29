@@ -2496,22 +2496,20 @@ wheels = [
 
 [[package]]
 name = "openeo"
-version = "0.51.0"
+version = "0.37.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "deprecated" },
-    { name = "geopandas" },
     { name = "numpy" },
     { name = "oschmod", marker = "sys_platform == 'win32' or (extra == 'extra-24-openeo-processes-dask-ml-torch-cpu' and extra == 'extra-24-openeo-processes-dask-ml-torch-cuda')" },
     { name = "pandas" },
     { name = "pystac" },
     { name = "requests" },
     { name = "shapely" },
-    { name = "urllib3" },
     { name = "xarray" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/8f/cfcaeaefa88ba2a7f06ac5ece862b272b10645f72e5f3a9a27325c8499fd/openeo-0.51.0-py3-none-any.whl", hash = "sha256:93e62ac67a3741863a796127db85c4336315b050038e9da946b01c718d923e02", size = 349236, upload-time = "2026-07-16T16:02:42.058Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/78/4fa627169c25b472163293c5a7f59630e8e35cdf74d0523b36bd30cce5fd/openeo-0.37.0-py3-none-any.whl", hash = "sha256:a3b2a7a60a8af313516e158540c68fc4020ee468eabe815e5da9d7b6dbd187d2", size = 289752, upload-time = "2025-01-21T14:45:35.792Z" },
 ]
 
 [[package]]
@@ -2583,6 +2581,7 @@ dependencies = [
     { name = "ml-datacube-bridge" },
     { name = "openeo-processes-dask", extra = ["implementations"] },
     { name = "pystac" },
+    { name = "rioxarray" },
     { name = "s3fs" },
     { name = "stackstac" },
     { name = "zarr" },
@@ -2628,6 +2627,7 @@ requires-dist = [
     { name = "ml-datacube-bridge", extras = ["torch"], marker = "extra == 'torch-cuda'", git = "https://github.com/jonas-hurst/ml-datacube-bridge?rev=0.1.0" },
     { name = "openeo-processes-dask", extras = ["implementations"], specifier = ">=2026.6.4,<2027.0.0" },
     { name = "pystac", git = "https://github.com/jonas-hurst/pystac?rev=v1.15.1OWN" },
+    { name = "rioxarray", specifier = ">=0.22" },
     { name = "s3fs", specifier = ">=2026.7.0,<2027.0.0" },
     { name = "scikit-learn", marker = "extra == 'scikit-learn'", specifier = ">=1.8.0" },
     { name = "stackstac", specifier = ">=0.5.1" },
@@ -3926,7 +3926,7 @@ wheels = [
 
 [[package]]
 name = "rioxarray"
-version = "0.21.0"
+version = "0.23.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -3935,9 +3935,9 @@ dependencies = [
     { name = "rasterio" },
     { name = "xarray" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/68/ba/9b70c0e33159244b264aed7b331ff349bc0a3a4ac50e8bea08729bf6ae53/rioxarray-0.21.0.tar.gz", hash = "sha256:a292d96f4d6412c05ff09629b72523ae2e9c42598183f5e9c555fc368f867c0f", size = 56555, upload-time = "2026-01-26T17:15:46.783Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/8d/9e5ab7525d2e81f9963a9192637ba8808e214f1c93a5ed000048447d626f/rioxarray-0.23.0.tar.gz", hash = "sha256:800fc3ae2405ff535edf657f3f0a6bda5a70e72282883ce18c7daecd8e0bfc58", size = 61638, upload-time = "2026-07-27T19:33:29.281Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/aa/4ba81b24acf2b05cb00fd7603f84e5088af72596839f85c23c6ff5d249d7/rioxarray-0.21.0-py3-none-any.whl", hash = "sha256:f8793822f09ab7de3a82ffe711beff4cdf313a860ff86df0942f3385374ac562", size = 64940, upload-time = "2026-01-26T17:15:45.648Z" },
+    { url = "https://files.pythonhosted.org/packages/85/3f/07a582935b06ee0dddaaf2656fbeb5f7c4e1476f0649d1e5ac3c0dac540f/rioxarray-0.23.0-py3-none-any.whl", hash = "sha256:5f8dad0577792a3cb5b90dda66339f161f149a1ad5c03fba0747cc67e29b54af", size = 72397, upload-time = "2026-07-27T19:33:28.23Z" },
 ]
 
 [[package]]
@@ -4738,16 +4738,16 @@ wheels = [
 
 [[package]]
 name = "xarray"
-version = "2025.1.1"
+version = "2026.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
     { name = "packaging" },
     { name = "pandas" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/e7/e42216792114b13db0f026ca3485ce163145df9cea8b5b81ff296b113869/xarray-2025.1.1.tar.gz", hash = "sha256:1a3011d00ca92a94ba31b297c2eccd310b87a7dacf5acc8d0468385d4a834342", size = 3257038, upload-time = "2025-01-09T16:27:33.182Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ea/96/3f7bdd00e505ec3698903415b30135024703e017b28c6b61f98da3193b0d/xarray-2026.7.0.tar.gz", hash = "sha256:361b495928fdbf5b58d0969bb6775339019da5e93ca74d61ddf4eb5edd6ce604", size = 3145348, upload-time = "2026-07-09T17:38:26.515Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/14/78/cd4d5294e0a7294243d332fdd00a020942faa41472e694f2552976a5fe39/xarray-2025.1.1-py3-none-any.whl", hash = "sha256:8a69d17c1e4ad09664fd0bc2dbb398e7368eda25bd19456fb919a6eb6490fb72", size = 1241687, upload-time = "2025-01-09T16:27:30.669Z" },
+    { url = "https://files.pythonhosted.org/packages/57/5b/28365212062939d213802e5e5fe855cdb231e1c2a93254ba1690066504e3/xarray-2026.7.0-py3-none-any.whl", hash = "sha256:bf9dd130b93806dc78e90c1b7ac24851b31557b888674c53622235691cf21824", size = 1426778, upload-time = "2026-07-09T17:38:24.224Z" },
 ]
 
 [[package]]
