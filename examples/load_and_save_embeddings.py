@@ -3,17 +3,15 @@ This is a very basic example of an openEO process graph.
 It shows how to load Google AEF embeddings with load_embeddings with a spatial and
 temporal bbox, and then stores them with the save_embeddings process.
 """
-
 import os
 from pathlib import Path
-
-from minibackend import execute_graph_dict
 
 if Path.cwd().resolve().name == "examples":
     os.chdir("..")
 if Path.cwd().resolve().name != "openeo-processes-dask-ml":
     raise Exception("Current CWD is not the Project root (openeo-processes-dask-ml)")
 
+from minibackend import execute_graph_dict
 
 process_graph = {
     "load_embeddings": {
