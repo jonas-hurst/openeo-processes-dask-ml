@@ -9,7 +9,20 @@ import xarray as xr
 from dask import array as da
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 
-from openeo_processes_dask_ml.process_implementations import load_embeddings
+from openeo_processes_dask_ml.process_implementations.load_embeddings import (
+    _construct_embedding_vector_cube,
+    _crs_of,
+    _get_item_time,
+    _load_embedding_collection,
+    _load_embedding_collection_parquet,
+    _load_embedding_collection_tif,
+    _load_embedding_item,
+    _load_parquet_item,
+    _load_tiff,
+    _match_geom_in_list,
+    _prepare_geoparquet,
+    load_embeddings,
+)
 
 
 def _make_item(
@@ -43,21 +56,21 @@ def test_get_item_time():
     end_dt = datetime.fromisoformat("2015-07-15T02:54:14-12:00")
 
     i = pystac.Item("asdf", None, None, dt, {})
-    t = load_embeddings._get_item_time(i)
+    t = _get_item_time(i)
     assert isinstance(t, datetime)
     assert t.isoformat() == dt.isoformat()
 
     i = pystac.Item(
         "asdf", None, None, dt, {}, start_datetime=start_dt, end_datetime=end_dt
     )
-    t = load_embeddings._get_item_time(i)
+    t = _get_item_time(i)
     assert isinstance(t, datetime)
     assert t.isoformat() == dt.isoformat()
 
     i = pystac.Item(
         "asdf", None, None, None, {}, start_datetime=start_dt, end_datetime=end_dt
     )
-    t = load_embeddings._get_item_time(i)
+    t = _get_item_time(i)
     assert isinstance(t, datetime)
     assert t.isoformat() == start_dt.isoformat()
 
@@ -70,18 +83,18 @@ def test_match_geom_in_list_point():
 
     geom_list = []
 
-    i = load_embeddings._match_geom_in_list(geom_list, pnt1, tolerance=0.00001)
+    i = _match_geom_in_list(geom_list, pnt1, tolerance=0.00001)
     assert i is None
     geom_list.append(pnt1)
 
-    i = load_embeddings._match_geom_in_list(geom_list, pnt2, tolerance=0.00001)
+    i = _match_geom_in_list(geom_list, pnt2, tolerance=0.00001)
     assert i == 0
 
-    i = load_embeddings._match_geom_in_list(geom_list, pnt3, tolerance=0.00001)
+    i = _match_geom_in_list(geom_list, pnt3, tolerance=0.00001)
     assert i is None
     geom_list.append(pnt3)
 
-    i = load_embeddings._match_geom_in_list(geom_list, pnt4, tolerance=0.00001)
+    i = _match_geom_in_list(geom_list, pnt4, tolerance=0.00001)
     assert i == 1
 
 
@@ -100,27 +113,27 @@ def test_match_geom_in_list_polygon():
     geom_list = []
 
     # 1. First polygon shouldn't match anything in an empty list
-    i = load_embeddings._match_geom_in_list(geom_list, poly1, tolerance=0.00001)
+    i = _match_geom_in_list(geom_list, poly1, tolerance=0.00001)
     assert i is None
     geom_list.append(poly1)
 
     # 2. Second polygon is identical to the first, so it should match index 0
-    i = load_embeddings._match_geom_in_list(geom_list, poly2, tolerance=0.00001)
+    i = _match_geom_in_list(geom_list, poly2, tolerance=0.00001)
     assert i == 0
 
     # 3. Third polygon is in a new location, shouldn't match index 0
-    i = load_embeddings._match_geom_in_list(geom_list, poly3, tolerance=0.00001)
+    i = _match_geom_in_list(geom_list, poly3, tolerance=0.00001)
     assert i is None
     geom_list.append(poly3)
 
     # 4. Fourth polygon is offset within the 0.00001 tolerance, so it should match index 1
-    i = load_embeddings._match_geom_in_list(geom_list, poly4, tolerance=0.00001)
+    i = _match_geom_in_list(geom_list, poly4, tolerance=0.00001)
     assert i == 1
 
 
 def test_load_tiff_1x1():
     path = "tests/data/embedding_1x1.tif"
-    e_dc = load_embeddings._load_tiff(path)
+    e_dc = _load_tiff(path)
 
     assert "band" not in e_dc.dims
     assert "embedding" in e_dc.dims
@@ -133,7 +146,7 @@ def test_load_tiff_1x1():
 
 def test_prepare_geoparquet_without_bbox_without_transform():
     path = "tests/data/embeddings.parquet"
-    geom_array, da_array = load_embeddings._prepare_geoparquet(
+    geom_array, da_array = _prepare_geoparquet(
         path, None, "geometry", "embedding", 4, np.float32, False
     )
     poly_utm: shapely.Polygon = shapely.box(404000, 5756000, 406000, 5758000)
@@ -153,7 +166,7 @@ def test_prepare_geoparquet_without_bbox_without_transform():
 
 def test_prepare_geoparquet_without_bbox_with_transform():
     path = "tests/data/embeddings.parquet"
-    geom_array, da_array = load_embeddings._prepare_geoparquet(
+    geom_array, da_array = _prepare_geoparquet(
         path, None, "geometry", "embedding", 4, np.float32, True
     )
     poly_utm: shapely.Polygon = shapely.box(404000, 5756000, 406000, 5758000)
@@ -181,7 +194,7 @@ def test_prepare_geoparquet_with_bbox_without_transform():
     )
 
     path = "tests/data/embeddings.parquet"
-    geom_array, da_array = load_embeddings._prepare_geoparquet(
+    geom_array, da_array = _prepare_geoparquet(
         path, bbox, "geometry", "embedding", 4, np.float32, False
     )
     poly_utm: shapely.Polygon = shapely.box(404000, 5756000, 406000, 5758000)
@@ -209,7 +222,7 @@ def test_prepare_geoparquet_with_bbox_with_transform():
     )
 
     path = "tests/data/embeddings.parquet"
-    geom_array, da_array = load_embeddings._prepare_geoparquet(
+    geom_array, da_array = _prepare_geoparquet(
         path, bbox, "geometry", "embedding", 4, np.float32, True
     )
     poly_utm: shapely.Polygon = shapely.box(404000, 5756000, 406000, 5758000)
@@ -232,7 +245,7 @@ def test_load_parquet_item_without_bbox_without_transform():
     poly_utm: shapely.Polygon = shapely.box(404000, 5756000, 406000, 5758000)
     poly_wgs84 = shapely.box(0, 0, 180, 90)
 
-    e_dc = load_embeddings._load_parquet_item(path, None, False)
+    e_dc = _load_parquet_item(path, None, False)
 
     assert "geometry" in e_dc.dims
     assert "embedding" in e_dc.dims
@@ -254,7 +267,7 @@ def test_load_parquet_item_without_bbox_with_transform():
     poly_utm: shapely.Polygon = shapely.box(404000, 5756000, 406000, 5758000)
     poly_wgs84 = shapely.box(0, 0, 180, 90)
 
-    e_dc = load_embeddings._load_parquet_item(path, None, True)
+    e_dc = _load_parquet_item(path, None, True)
 
     assert "geometry" in e_dc.dims
     assert "embedding" in e_dc.dims
@@ -284,7 +297,7 @@ def test_load_parquet_item_with_bbox_without_transform():
     poly_utm: shapely.Polygon = shapely.box(404000, 5756000, 406000, 5758000)
     poly_wgs84 = shapely.box(0, 0, 180, 90)
 
-    e_dc = load_embeddings._load_parquet_item(path, bbox, False)
+    e_dc = _load_parquet_item(path, bbox, False)
 
     assert "geometry" in e_dc.dims
     assert "embedding" in e_dc.dims
@@ -314,7 +327,7 @@ def test_load_parquet_item_with_bbox_with_transform():
     poly_utm: shapely.Polygon = shapely.box(404000, 5756000, 406000, 5758000)
     poly_wgs84 = shapely.box(0, 0, 180, 90)
 
-    e_dc = load_embeddings._load_parquet_item(path, bbox, True)
+    e_dc = _load_parquet_item(path, bbox, True)
 
     assert "geometry" in e_dc.dims
     assert "embedding" in e_dc.dims
@@ -335,7 +348,7 @@ def test_load_embedding_item_tiff():
     item = pystac.Item.from_file("tests/data/item_tif.json")
     asset_name = "embeddings"
 
-    e_dc = load_embeddings._load_embedding_item(item, asset_name, None, None)
+    e_dc = _load_embedding_item(item, asset_name, None, None)
     assert e_dc.shape == (1, 1, 768)
     assert "geometry" in e_dc.dims
     assert "time" in e_dc.dims
@@ -348,9 +361,7 @@ def test_load_embedding_item_parquet_no_bbox(reproject_to_4326: bool):
     item = pystac.Item.from_file("tests/data/item_pq.json")
     asset_name = "embeddings"
 
-    e_dc = load_embeddings._load_embedding_item(
-        item, asset_name, None, None, reproject_to_4326
-    )
+    e_dc = _load_embedding_item(item, asset_name, None, None, reproject_to_4326)
 
     assert e_dc.shape == (1, 4, 4)
     assert "time" in e_dc.dims
@@ -389,9 +400,7 @@ def test_load_embedding_item_parquet_with_bbox(reproject_to_4326: bool):
     item = pystac.Item.from_file("tests/data/item_pq.json")
     asset_name = "embeddings"
 
-    e_dc = load_embeddings._load_embedding_item(
-        item, asset_name, bbox, None, reproject_to_4326
-    )
+    e_dc = _load_embedding_item(item, asset_name, bbox, None, reproject_to_4326)
 
     assert e_dc.shape == (1, 2, 4)
     assert "time" in e_dc.dims
@@ -427,7 +436,7 @@ def test_construct_embedding_vector_cube():
         datetime.fromisoformat("2026-01-03"),
     ]
 
-    e_dc = load_embeddings._construct_embedding_vector_cube(i, geoms, times)
+    e_dc = _construct_embedding_vector_cube(i, geoms, times)
 
     assert "geometry" in e_dc.dims
     assert "time" in e_dc.dims
@@ -443,13 +452,13 @@ def test_construct_embedding_vector_cube():
 
 def test_crs_of():
     path = "tests/data/embeddings.parquet"
-    s = load_embeddings._crs_of(path)
+    s = _crs_of(path)
     assert s is not None
     assert isinstance(s, str)
 
     path = "tests/data/non-geoparquet.parquet"
     with pytest.raises(Exception):
-        load_embeddings._crs_of(path)
+        _crs_of(path)
 
 
 def test_load_collection_tif():
@@ -473,7 +482,7 @@ def test_load_collection_tif():
             i += 1
     item_collection = _make_item_collection(items)
 
-    e_dc = load_embeddings._load_embedding_collection_tif(item_collection, "embedding")
+    e_dc = _load_embedding_collection_tif(item_collection, "embedding")
 
     assert e_dc.shape == (2, 4, 768)
     assert "geometry" in e_dc.dims
@@ -500,7 +509,7 @@ def test_load_embedding_collection_tif():
     coll = pystac.Collection.from_file(url)
     asset_name = "embeddings"
 
-    e_dc = load_embeddings._load_embedding_collection(url, coll, bbox, time, asset_name)
+    e_dc = _load_embedding_collection(url, coll, bbox, time, asset_name)
 
     assert e_dc.shape == (3, 9, 768)
     assert "geometry" in e_dc.dims
@@ -520,7 +529,7 @@ def test_load_embeddings_tif_collection():
     time = TemporalInterval(["2025-01-01", "2025-01-02"])
     asset_name = "embeddings"
 
-    e_dc = load_embeddings.load_embeddings(url, bbox, time, asset_name)
+    e_dc = load_embeddings(url, bbox, time, asset_name)
 
     assert e_dc.shape == (2, 9, 768)
     assert "geometry" in e_dc.dims
@@ -540,7 +549,7 @@ def test_load_embeddings_tif_singleitem():
     )
     asset_name = "embeddings"
 
-    e_dc = load_embeddings.load_embeddings(url, asset_name=asset_name)
+    e_dc = load_embeddings(url, asset_name=asset_name)
     assert e_dc.shape == (1, 1, 768)
     assert "geometry" in e_dc.dims
     assert "embedding" in e_dc.dims
@@ -574,9 +583,7 @@ def test_load_embedding_collection_parquet():
         )
         i += 1
     item_collection = _make_item_collection(items)
-    e_dc = load_embeddings._load_embedding_collection_parquet(
-        coll, item_collection, "embedding", None
-    )
+    e_dc = _load_embedding_collection_parquet(coll, item_collection, "embedding", None)
     assert e_dc.shape == (2, 4, 4)
     assert "embedding" in e_dc.dims
     assert "time" in e_dc.dims
@@ -596,9 +603,7 @@ def test_load_embedding_collection_parquetcollection():
     )
     temp = TemporalInterval(["2025-01-01", "2025-01-03"])
 
-    e_dc = load_embeddings._load_embedding_collection(
-        url, coll, bbox, temp, "embeddings"
-    )
+    e_dc = _load_embedding_collection(url, coll, bbox, temp, "embeddings")
     assert e_dc.shape == (3, 2, 4)
     assert "geometry" in e_dc.dims
     assert "time" in e_dc.dims
@@ -617,7 +622,7 @@ def test_load_embeddings_parquet_collection():
     )
     temp = TemporalInterval(["2025-01-01", "2025-01-03"])
 
-    e_dc = load_embeddings.load_embeddings(url, bbox, temp, "embeddings")
+    e_dc = load_embeddings(url, bbox, temp, "embeddings")
     assert e_dc.shape == (3, 2, 4)
     assert "geometry" in e_dc.dims
     assert "time" in e_dc.dims
@@ -627,7 +632,7 @@ def test_load_embeddings_parquet_collection():
 @pytest.mark.vcr()
 def test_load_embeddings_parquet_singleitem():
     url = "http://localhost:8082/collections/terramind_embeddings/items/emb_0"
-    e_dc = load_embeddings.load_embeddings(url, asset_name="embeddings")
+    e_dc = load_embeddings(url, asset_name="embeddings")
 
     assert e_dc.shape == (1, 4, 4)
     assert "geometry" in e_dc.dims
