@@ -19,7 +19,7 @@ process_graph = {
     "load_embeddings": {
         "process_id": "load_embeddings",
         "arguments": {
-            "url": "/home/jhurst/Code/openeo-processes-dask-ml/examples/embeddings/Go",
+            "url": "https://raw.githubusercontent.com/Open-EO/openeo-processes-dask-ml/refs/heads/main/examples/embeddings/Google_AlphaEarth_embeddings_stac_item.json",
             "spatial_extent": {"west": 8.2, "east": 8.5, "south": 48.9, "north": 49.1},
             "temporal_extent": ["2024-01-01", "2024-12-31"],
             "asset_name": "embeddings",
