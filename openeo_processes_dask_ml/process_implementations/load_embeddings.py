@@ -100,6 +100,51 @@ def _monotonic_bounds_slice(coord_values, lo, hi):
     return slice(int(idx[0]), int(idx[-1]) + 1)
 
 
+def _snap_slice_to_chunks(s: slice, chunks: tuple[int, ...], array_len: int) -> slice:
+    """Snaps a slice's boundaries to align with Dask chunk borders.
+
+    Expands start down and stop up.
+    """
+    if s is None:
+        return None
+
+    # Handle step and negative steps if present
+    step = s.step if s.step is not None else 1
+    start = s.start if s.start is not None else 0
+    stop = s.stop if s.stop is not None else array_len
+
+    # Handle negative indexing/descending slice positions
+    if start < 0:
+        start += array_len
+    if stop < 0:
+        stop += array_len
+
+    # If coordinate axis is reversed (descending), normalize indices for border calculation
+    if start > stop:
+        start, stop = stop, start
+        reversed_slice = True
+    else:
+        reversed_slice = False
+
+    # Cumulative chunk boundary indices
+    chunk_boundaries = np.cumsum((0,) + chunks)
+
+    # Find the chunk boundary at or before 'start'
+    snapped_start_idx = np.searchsorted(chunk_boundaries, start, side="right") - 1
+    snapped_start = chunk_boundaries[snapped_start_idx]
+
+    # Find the chunk boundary at or after 'stop'
+    snapped_stop_idx = np.searchsorted(chunk_boundaries, stop, side="left")
+    snapped_stop = chunk_boundaries[snapped_stop_idx]
+
+    # Re-apply reversed ordering if original slice was descending
+    if reversed_slice:
+        snapped_start, snapped_stop = snapped_stop, snapped_start
+        step = -abs(step) if step > 0 else step
+
+    return slice(snapped_start, snapped_stop, step)
+
+
 def _load_zarr(
     path: str, bbox: BoundingBox | None, temporal_extent: TemporalInterval
 ) -> xr.DataArray:
@@ -134,8 +179,8 @@ def _load_zarr(
         y_coords = ds.coords[y_dim].values
 
         # check if x and y coords could be WGS-84 geogrpahic coords
-        x_is_between = np.all((x_coords >= -180) & (y_coords <= 180))
-        y_is_between = np.all((x_coords >= -90) & (y_coords <= 90))
+        x_is_between = np.all((x_coords >= -181) & (x_coords <= 181))
+        y_is_between = np.all((y_coords >= -91) & (y_coords <= 91))
 
         if x_is_between and y_is_between:
             warnings.warn(
@@ -217,6 +262,21 @@ def _load_zarr(
         if x_slice is None or y_slice is None:
             raise ValueError("Bounding box does not intersect the datacube")
 
+            # --- NEW: Snap slices to chunk boundaries ---
+            # Retrieve chunk structure for both spatial dimensions
+        x_chunks = embedding_datacube.chunksizes.get(x_coord_name)
+        y_chunks = embedding_datacube.chunksizes.get(y_coord_name)
+
+        if x_chunks:
+            x_slice = _snap_slice_to_chunks(
+                x_slice, x_chunks, len(embedding_datacube[x_coord_name])
+            )
+        if y_chunks:
+            y_slice = _snap_slice_to_chunks(
+                y_slice, y_chunks, len(embedding_datacube[y_coord_name])
+            )
+        # --------------------------------------------
+
         embedding_datacube = embedding_datacube.isel(
             {x_coord_name: x_slice, y_coord_name: y_slice}
         )
@@ -233,7 +293,7 @@ def _load_zarr(
         idx = np.flatnonzero(mask)
         embedding_datacube = embedding_datacube.isel({time_dim: idx})
 
-    return embedding_datacube
+    return embedding_datacube.chunk()
 
 
 def _get_extracted_store(path: str, cache_dir: Path) -> Path:

@@ -142,7 +142,7 @@ def open_zarr_auto(
 
                     try:
                         return xr.open_zarr(
-                            mapper, **open_kwargs, decode_coords="all", chunks={}
+                            mapper, **open_kwargs, decode_coords="all", chunks=None
                         )
                     except Exception as e:
                         last_err = e
