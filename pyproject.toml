@@ -18,11 +18,18 @@ dependencies = [
     "gdal (==3.13.1)",
     "zarr (>3.0)",
     "s3fs (>=2026.7.0,<2027.0.0)",
+    "ml-datacube-bridge @ git+https://github.com/jonas-hurst/ml-datacube-bridge@0.1.0",
 ]
 
 [project.optional-dependencies]
-torch-cuda = ["torch==2.9.0"]
-torch-cpu = ["torch==2.9.0"]
+torch-cuda = [
+    "torch==2.9.0",
+    "ml-datacube-bridge[torch] @ git+https://github.com/jonas-hurst/ml-datacube-bridge@0.1.0"
+]
+torch-cpu = [
+    "torch==2.9.0",
+    "ml-datacube-bridge[torch] @ git+https://github.com/jonas-hurst/ml-datacube-bridge@0.1.0"
+]
 scikit-learn = ["scikit-learn>=1.8.0"]
 
 [dependency-groups]
