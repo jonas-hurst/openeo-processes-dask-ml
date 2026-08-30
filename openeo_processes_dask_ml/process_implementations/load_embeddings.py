@@ -313,6 +313,8 @@ def _load_zarr(
 
     if preferred_chunks:
         embedding_datacube = embedding_datacube.chunk(preferred_chunks)
+        # drop shard encoding to not cause problems further down the line
+        embedding_datacube.encoding.pop("shards", None)
     else:
         embedding_datacube = embedding_datacube.chunk()
 
