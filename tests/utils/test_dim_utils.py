@@ -73,6 +73,16 @@ def test_get_spatial_dim_names(dim_names: list[str]):
             dim_utils.get_spatial_dim_names(dc)
 
 
+@pytest.mark.parametrize("dim_name", ["geom", "geometry", "GEOMETRY", "geom", "foo"])
+def test_get_geometry_dim_name(dim_name: str):
+    dc = xr.DataArray(da.random.random((2, 2)), dims=[dim_name, "bar"])
+    if dim_name != "foo":
+        assert dim_utils.get_geometry_dim_name(dc) == dim_name
+    else:
+        with pytest.raises(DimensionMissing):
+            dim_utils.get_y_dim_name(dc)
+
+
 @pytest.mark.parametrize("dim_name", ["x", "times", "y", "lat", "bands"])
 def test_get_alternative_datacube_dim_name(dim_name: str):
     dc = xr.DataArray(da.random.random(2), dims=[dim_name])

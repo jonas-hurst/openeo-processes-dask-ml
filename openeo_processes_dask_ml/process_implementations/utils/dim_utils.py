@@ -16,6 +16,7 @@ y_dim_options = ["y", "lat", "latitude"]
 spatial_dim_options = [*x_dim_options, *y_dim_options]
 batch_dim_options = ["batch", "batches"]
 embedding_dim_options = ["embedding", "embeddings"]
+geometry_dim_options = ["geom", "geometry"]
 
 
 def _find_alternative_dim_name_in_datacube(
@@ -121,6 +122,13 @@ def get_embedding_dim_name(dc: xr.DataArray | xr.Dataset) -> str:
         return _find_alternative_dim_name_in_datacube(dc, embedding_dim_options)
     except ValueError:
         raise DimensionMissing("Could not find an embedding dimension in the datacube")
+
+
+def get_geometry_dim_name(dc: xr.DataArray | xr.Dataset) -> str:
+    try:
+        return _find_alternative_dim_name_in_datacube(dc, geometry_dim_options)
+    except ValueError:
+        raise DimensionMissing("Could not find a geometry dimension in the datacube")
 
 
 def get_alternative_datacube_dim_name(dc: xr.DataArray, dim_name: str) -> str | None:
