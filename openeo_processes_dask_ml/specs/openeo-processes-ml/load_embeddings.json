@@ -157,9 +157,13 @@
         }
     ],
     "returns": {
-        "description": "Bool value indicating that saving was successful (true) or not (false)",
+        "description": "Datacube containing the embeddings",
         "schema": {
-            "type": "bool"
+            "type": "object",
+            "subtype": "datacube",
+            "dimensions": {
+                "type": "other"
+            }
         }
     }
 }
