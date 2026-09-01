@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Self
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 from dask import array as da
 from dask import dataframe as ddf
@@ -209,6 +210,7 @@ class RfClassModel(SkLearnModel):
         return model_path
 
     def fit_model(self, training_set: xr.DataArray) -> Self:
+        training_set = training_set.chunk(-1).persist()
         out_dims = self.output.result.dim_order
         if len(out_dims) > 1:
             raise ValueError("Only one output dimension is allowed in RF classifier")
