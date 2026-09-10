@@ -51,9 +51,9 @@ def _get_stac_item_template(_id: str) -> dict:
     return d
 
 
-def _save_as_zarr(datacube: xr.DataArray, result_dir: Path, zarr_dir: Path) -> Delayed:
-    saved = datacube.to_zarr(zarr_dir, compute=False)
-    zip_path = delayed(zip_utils.create_zip_archive)(
+def _save_as_zarr(datacube: xr.DataArray, result_dir: Path, zarr_dir: Path) -> Path:
+    saved = datacube.to_zarr(zarr_dir)
+    zip_path = zip_utils.create_zip_archive(
         result_dir, zarr_dir, "results.zarr.zip", saved
     )
     return zip_path
@@ -139,7 +139,7 @@ def _update_stac_metadata_vector_cube(stac_metadata: dict, datacube: xr.DataArra
     pass
 
 
-def _save_metadata_file(stac_metadata: dict, metadata_path: str) -> bool:
+def _save_metadata_file(stac_metadata: dict, metadata_path: Path) -> bool:
     try:
         with open(metadata_path, "w") as file:
             json.dump(stac_metadata, file, indent=4)
@@ -148,7 +148,7 @@ def _save_metadata_file(stac_metadata: dict, metadata_path: str) -> bool:
         raise Exception("Failed saving the metadata file.")
 
 
-def save_embeddings(data: xr.DataArray) -> Delayed:
+def save_embeddings(data: xr.DataArray) -> bool:
     # you can call this method form your project-specific save-results process
     # if this method returns True, saving was successful, you can skip your own save-result code
     # if it returns False, saving was unsuccessful (i.e. no embeddings DC) and you can run your own save-result code
@@ -172,7 +172,7 @@ def save_embeddings(data: xr.DataArray) -> Delayed:
         data.name = "embeddings"
         _update_stac_metadata_raster_cube(stac_metadata, data, result_dir)
         zipped_zarr_path = _save_as_zarr(data, result_dir, zarr_out_path)
-        stac_metadata = delayed(_set_stac_embedding_asset_metadata_raster)(
+        stac_metadata = _set_stac_embedding_asset_metadata_raster(
             stac_metadata, zipped_zarr_path
         )
 
@@ -181,5 +181,5 @@ def save_embeddings(data: xr.DataArray) -> Delayed:
         _update_stac_metadata_vector_cube(stac_metadata, data)
         _save_as_parquet(data, result_dir)
 
-    saved = delayed(_save_metadata_file)(stac_metadata, metadata_path)
+    saved = _save_metadata_file(stac_metadata, metadata_path)
     return saved
