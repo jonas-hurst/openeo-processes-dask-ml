@@ -55,6 +55,7 @@ def run_openeo_ml_predict(model_url: str):
                     "data": {"from_node": "load_data"},
                     "model": {"from_node": "load_model"},
                 },
+                "result": True,
             },
             "save": {
                 "process_id": "save_embeddings",
@@ -66,9 +67,6 @@ def run_openeo_ml_predict(model_url: str):
     }
 
     out = execute_graph_dict(process_graph)  # output datacube is lazy
-    print("lazy result object", out)
-    print("computing results now")
-    out = out.compute()  # compute the datacube
     print("Saved results", out)
 
 
