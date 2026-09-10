@@ -261,7 +261,7 @@ def load_stac_with_cache(
 
     if os.path.exists(path):
         dc = get_datacube_from_pickle_file(path)
-        dc = dc.chunk({"time": 1, "bands": -1, "x": 200, "y": 200})
+        dc = dc.chunk({"time": 1, "bands": -1, "x": 224, "y": 224})
         return dc
     else:
         dc_lazy = load_stac_without_cache(
