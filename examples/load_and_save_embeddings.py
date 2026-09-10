@@ -34,6 +34,3 @@ process_graph = {
 
 x = execute_graph_dict(process_graph)
 print(x)
-
-x = x.compute()
-print(x)
