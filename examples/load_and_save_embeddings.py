@@ -2,6 +2,7 @@
 This is a very basic example of an openEO process graph.
 It shows how to load Google AEF embeddings with load_embeddings with a spatial and
 temporal bbox, and then stores them with the save_embeddings process.
+This is the same as in examples/process_graphs/load_and_save_embeddings.json
 """
 import os
 from pathlib import Path
