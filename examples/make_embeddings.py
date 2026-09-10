@@ -1,3 +1,7 @@
+"""
+This example computes earth embeddings using Terramind Sentinel-2-L2A data.
+"""
+
 import argparse
 import os
 from pathlib import Path
@@ -55,7 +59,6 @@ def run_openeo_ml_predict(model_url: str):
                     "data": {"from_node": "load_data"},
                     "model": {"from_node": "load_model"},
                 },
-                "result": True,
             },
             "save": {
                 "process_id": "save_embeddings",
@@ -67,7 +70,7 @@ def run_openeo_ml_predict(model_url: str):
     }
 
     out = execute_graph_dict(process_graph)  # output datacube is lazy
-    print("Saved results", out)
+    print("Saved: ", out)
 
 
 if __name__ == "__main__":
