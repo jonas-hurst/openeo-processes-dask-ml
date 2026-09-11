@@ -84,7 +84,7 @@ def get_x_dim_name(dc: xr.DataArray | xr.Dataset) -> str:
         raise DimensionMissing(
             f"Could not find an X dimension in the datacube. "
             f"If this is a mistake, rename the X dimension to one of the following: "
-            f"{', '.join(time_dim_options)}"
+            f"{', '.join(x_dim_options)}"
         )
 
 
@@ -101,7 +101,7 @@ def get_y_dim_name(dc: xr.DataArray | xr.Dataset) -> str:
         raise DimensionMissing(
             f"Could not find a Y dimension in the datacube. "
             f"If this is a mistake, rename the Y dimension to one of the following: "
-            f"{', '.join(time_dim_options)}"
+            f"{', '.join(y_dim_options)}"
         )
 
 
@@ -129,6 +129,22 @@ def get_geometry_dim_name(dc: xr.DataArray | xr.Dataset) -> str:
         return _find_alternative_dim_name_in_datacube(dc, geometry_dim_options)
     except ValueError:
         raise DimensionMissing("Could not find a geometry dimension in the datacube")
+
+
+def is_raster_datacube(dc: xr.DataArray | xr.Dataset) -> bool:
+    try:
+        _ = get_spatial_dim_names(dc)
+        return True
+    except DimensionMissing:
+        return False
+
+
+def is_vector_datacube(dc: xr.DataArray | xr.Dataset) -> bool:
+    try:
+        _ = get_geometry_dim_name(dc)
+        return True
+    except DimensionMissing:
+        return False
 
 
 def get_alternative_datacube_dim_name(dc: xr.DataArray, dim_name: str) -> str | None:
